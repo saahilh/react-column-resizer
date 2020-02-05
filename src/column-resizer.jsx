@@ -22,10 +22,12 @@ export default class ColumnResizer extends React.Component {
         this.startWidthPrev = 0;
         this.startWidthNext = 0;
 
-        this.allRefs = [];
+        // A list of all refs to also update alongside the current one
+        this.allRefs = this.props.allRefs;
 
+        // Add ref to the aforementioned list
         if(this.refs.ele) {
-            this.allRefs.push(this.refs.ele);
+            this.props.addRef(this.refs.ele);
         }
     }
 
