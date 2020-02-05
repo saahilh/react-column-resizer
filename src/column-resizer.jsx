@@ -22,7 +22,6 @@ export default class ColumnResizer extends React.Component {
     this.startWidthPrev = 0;
     this.startWidthNext = 0;
 
-    // Now also expects refs = array of total number of headers to link and setRefs = setter for this array
   }
 
   startDrag() {
@@ -76,14 +75,8 @@ export default class ColumnResizer extends React.Component {
     let newPrev = this.startWidthPrev - moveDiff;
     let newNext = this.startWidthNext + moveDiff;
 
-    if (newPrev < this.props.minWidth) {
-      const offset = newPrev - this.props.minWidth;
-      newPrev = this.props.minWidth;
-      newNext += offset;
-    } else if (newNext < this.props.minWidth) {
-      const offset = newNext - this.props.minWidth;
-      newNext = this.props.minWidth;
-      newPrev += offset;
+    if (newPrev < this.props.minWidth || newNext < this.props.minWidth) {
+      return;
     }
 
     this.props.refs[this.props.index].forEach(ref => {
