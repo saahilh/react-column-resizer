@@ -9,175 +9,175 @@ import { bool, number, string } from 'prop-types';
 
 export default class ColumnResizer extends React.Component {
 
-    constructor(props) {
-        super(props);
+  constructor(props) {
+    super(props);
 
-        this.startDrag = this.startDrag.bind(this);
-        this.endDrag = this.endDrag.bind(this);
-        this.onMouseMove = this.onMouseMove.bind(this);
+    this.startDrag = this.startDrag.bind(this);
+    this.endDrag = this.endDrag.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
 
-        this.dragging = false;
-        this.mouseX = 0
-        this.startPos = 0;
-        this.startWidthPrev = 0;
-        this.startWidthNext = 0;
+    this.dragging = false;
+    this.mouseX = 0
+    this.startPos = 0;
+    this.startWidthPrev = 0;
+    this.startWidthNext = 0;
 
-        // A list of all refs to also update alongside the current one
-        this.allRefs = this.props.allRefs;
+    // Now also expects refs = array of total number of headers to link and setRefs = setter for this array
+  }
 
-        // Add ref to the aforementioned list
-        if(this.refs.ele) {
-            this.props.addRef(this.refs.ele);
-        }
+  startDrag() {
+    if (this.props.disabled) {
+      return;
     }
 
-    startDrag() {
-        if (this.props.disabled) {
-            return;
-        }
+    this.dragging = true;
+    this.startPos = this.mouseX;
 
-        this.dragging = true;
-        this.startPos = this.mouseX;
+    this.startWidthPrev = 0;
+    this.startWidthNext = 0;
 
-        this.startWidthPrev = 0;
-        this.startWidthNext = 0;        
+    this.props.refs[this.props.index].forEach(ref => {
+      this.handleRefMovement(ref);
+    });
+  }
 
-        this.allRefs.forEach(ref => {
-            this.handleRefMovement(ref);
-        });
+  handleRefMovement(ref) {
+    let prevSibling = ref.previousSibling;
+    let nextSibling = ref.nextSibling;
+
+    if (prevSibling) {
+      this.startWidthPrev = prevSibling.clientWidth;
     }
 
-    handleRefMovement(ref) {
-        let prevSibling = ref.previousSibling;
-        let nextSibling = ref.nextSibling;
+    if (nextSibling) {
+      this.startWidthNext = nextSibling.clientWidth;
+    }
+  }
 
-        if (prevSibling) {
-            this.startWidthPrev = prevSibling.clientWidth;
-        }
-
-        if (nextSibling) {
-            this.startWidthNext = nextSibling.clientWidth;            
-        }
+  endDrag() {
+    if (this.props.disabled) {
+      return;
     }
 
-    endDrag() {
-        if (this.props.disabled) {
-            return;
-        }
+    this.dragging = false;
+  }
 
-        this.dragging = false;
+  onMouseMove(e) {
+    if (this.props.disabled) {
+      return;
     }
 
-    onMouseMove(e) {
-        if (this.props.disabled) {
-            return;
-        }
+    this.mouseX = e.touches ? e.touches[0].screenX : e.screenX;
+    if (!this.dragging) {
+      return;
+    }
+    
+    const moveDiff = this.startPos - this.mouseX;
+    let newPrev = this.startWidthPrev - moveDiff;
+    let newNext = this.startWidthNext + moveDiff;
 
-        this.mouseX = e.touches ? e.touches[0].screenX : e.screenX;
-        if (!this.dragging) {
-            return;
-        }
-
-        const moveDiff = this.startPos - this.mouseX;
-        let newPrev = this.startWidthPrev - moveDiff;
-        let newNext = this.startWidthNext + moveDiff;
-
-        if (newPrev < this.props.minWidth) {
-            const offset = newPrev - this.props.minWidth;
-            newPrev = this.props.minWidth;
-            newNext += offset;
-        } else if (newNext < this.props.minWidth) {
-            const offset = newNext - this.props.minWidth;
-            newNext = this.props.minWidth;
-            newPrev += offset;
-        }
-
-        this.allRefs.forEach(ref => {
-            updateSiblingsWidth(ref, newPrev, newNext);
-        });
+    if (newPrev < this.props.minWidth) {
+      const offset = newPrev - this.props.minWidth;
+      newPrev = this.props.minWidth;
+      newNext += offset;
+    } else if (newNext < this.props.minWidth) {
+      const offset = newNext - this.props.minWidth;
+      newNext = this.props.minWidth;
+      newPrev += offset;
     }
 
-    updateSiblingsWidth(ref) {
-        ref.previousSibling.style.width = newPrev + 'px';
-        ref.nextSibling.style.width = newNext + 'px';
+    this.props.refs[this.props.index].forEach(ref => {
+      ref.previousSibling.style.width = newPrev + 'px';
+      ref.nextSibling.style.width = newNext + 'px';
+    });
+  }
+
+  componentDidMount() {
+    if (this.props.disabled) {
+      return;
     }
 
-    componentDidMount() {
-        if (this.props.disabled) {
-            return;
-        }
+    // Add ref to list of components that should be updated with this one
+    this.addRef(this.refs.ele);
+    this.addEventListenersToDocument();
+  }
 
-        this.addEventListenersToDocument();
+  addRef() {
+    this.props.setRefs(prev => (
+      prev.map((refList, index) => (
+        index===this.props.index ? [...refList, this.refs.ele] : [...refList]
+      ))
+    ))
+  }
+
+  componentWillUnmount() {
+    if (this.props.disabled) {
+      return;
     }
 
-    componentWillUnmount() {
-        if (this.props.disabled) {
-            return;
-        }
+    this.removeEventListenersFromDocument();
+  }
 
-        this.removeEventListenersFromDocument();
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.disabled && !this.props.disabled) {
+      this.addEventListenersToDocument();
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        if (prevProps.disabled && !this.props.disabled) {
-            this.addEventListenersToDocument();
-        }
+    if (!prevProps.disabled && this.props.disabled) {
+      this.removeEventListenersFromDocument();
+    }
+  }
 
-        if (!prevProps.disabled && this.props.disabled) {
-            this.removeEventListenersFromDocument();
-        }
+  addEventListenersToDocument() {
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseup', this.endDrag);
+
+    document.addEventListener("touchmove", this.onMouseMove);
+    document.addEventListener("touchend", this.endDrag);
+  }
+
+  removeEventListenersFromDocument() {
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.endDrag);
+
+    document.removeEventListener('touchmove', this.onMouseMove);
+    document.removeEventListener('touchend', this.endDrag);
+  }
+
+  render() {
+
+    var style = {
+      userSelect: "none"
+    };
+
+    if (!this.props.disabled) {
+      style.cursor = 'ew-resize';
     }
 
-    addEventListenersToDocument() {
-        document.addEventListener('mousemove', this.onMouseMove);
-        document.addEventListener('mouseup', this.endDrag);
-
-        document.addEventListener("touchmove", this.onMouseMove);
-        document.addEventListener("touchend", this.endDrag);
+    if (this.props.className === "") {
+      style.width = '6px';
+      style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
     }
 
-    removeEventListenersFromDocument() {
-        document.removeEventListener('mousemove', this.onMouseMove);
-        document.removeEventListener('mouseup', this.endDrag);
-
-        document.removeEventListener('touchmove', this.onMouseMove);
-        document.removeEventListener('touchend', this.endDrag);
-    }
-
-    render() {
-
-        var style = {
-            userSelect: "none"
-        };
-
-        if (!this.props.disabled) {
-            style.cursor = 'ew-resize';
-        }
-
-        if (this.props.className === "") {
-            style.width = '6px';
-            style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-        }
-
-        return (
-            <td ref="ele" 
-                style={style}
-                className={this.props.className}
-                onMouseDown={!this.props.disabled && this.startDrag}
-                onTouchStart={!this.props.disabled && this.startDrag}/>
-        );
-    }
+    return (
+      <td ref="ele"
+        style={style}
+        className={this.props.className}
+        onMouseDown={!this.props.disabled && this.startDrag}
+        onTouchStart={!this.props.disabled && this.startDrag} />
+    );
+  }
 
 }
 
 ColumnResizer.defaultProps = {
-    disabled: false,
-    minWidth: 0,
-    className: "",
+  disabled: false,
+  minWidth: 0,
+  className: "",
 }
 
 ColumnResizer.propTypes = {
-    disabled: bool,
-    minWidth: number,
-    className: string,
+  disabled: bool,
+  minWidth: number,
+  className: string,
 }
