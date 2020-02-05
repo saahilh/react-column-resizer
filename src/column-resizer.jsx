@@ -1,6 +1,8 @@
 
 //Author: Nik M
 //https://github.com/nik-m2/react-column-resizer
+//Modified by: Saahil H
+//https://github.com/saahilh/react-column-resizer
 
 import React from 'react';
 import { bool, number, string } from 'prop-types';
@@ -19,6 +21,8 @@ export default class ColumnResizer extends React.Component {
         this.startPos = 0;
         this.startWidthPrev = 0;
         this.startWidthNext = 0;
+
+        this.allMatchingHeaders = props.allMatchingHeaders;
     }
 
     startDrag() {
@@ -33,16 +37,20 @@ export default class ColumnResizer extends React.Component {
         this.startWidthNext = 0;        
 
         if (this.refs.ele) {
-            let prevSibling = this.refs.ele.previousSibling;
-            let nextSibling = this.refs.ele.nextSibling;
+            this.handleRefMovement(this.refs.ele);
+        }
+    }
 
-            if (prevSibling) {
-                this.startWidthPrev = prevSibling.clientWidth;
-            }
-    
-            if (nextSibling) {
-                this.startWidthNext = nextSibling.clientWidth;            
-            }
+    handleRefMovement(ref) {
+        let prevSibling = ref.previousSibling;
+        let nextSibling = ref.nextSibling;
+
+        if (prevSibling) {
+            this.startWidthPrev = prevSibling.clientWidth;
+        }
+
+        if (nextSibling) {
+            this.startWidthNext = nextSibling.clientWidth;            
         }
     }
 
