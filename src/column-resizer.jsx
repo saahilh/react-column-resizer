@@ -72,8 +72,6 @@ export default class ColumnResizer extends React.Component {
             return;
         }
 
-        const ele = this.refs.ele;
-
         const moveDiff = this.startPos - this.mouseX;
         let newPrev = this.startWidthPrev - moveDiff;
         let newNext = this.startWidthNext + moveDiff;
@@ -88,8 +86,12 @@ export default class ColumnResizer extends React.Component {
             newPrev += offset;
         }
 
-        ele.previousSibling.style.width = newPrev + 'px';
-        ele.nextSibling.style.width = newNext + 'px';
+        updateSiblingsWidth(this.refs.ele, newPrev, newNext);
+    }
+
+    updateSiblingsWidth(ref) {
+        ref.previousSibling.style.width = newPrev + 'px';
+        ref.nextSibling.style.width = newNext + 'px';
     }
 
     componentDidMount() {
