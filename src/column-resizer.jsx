@@ -1,176 +1,88 @@
+import React, {useState, useEffect, useRef} from 'react';
 
-//Author: Nik M
-//https://github.com/nik-m2/react-column-resizer
-//Modified by: Saahil H
-//https://github.com/saahilh/react-column-resizer
+const getStyle = () => ({
+  userSelect: "none",
+  cursor: 'ew-resize',
+  width: '6px',
+  width: 'rgba(0, 0, 0, 0.1)',
+});
 
-import React from 'react';
-import { bool, number, string } from 'prop-types';
+function ColumnResizer({index, refs, setRefs}) {
+  const resizer = useRef();
 
-export default class ColumnResizer extends React.Component {
+  const [state, setState] = useState({
+    startPos: 0,
+    startWidthPrev: 0,
+    startWidthNext: 0,
+  });
 
-  constructor(props) {
-    super(props);
-
-    this.startDrag = this.startDrag.bind(this);
-    this.endDrag = this.endDrag.bind(this);
-    this.onMouseMove = this.onMouseMove.bind(this);
-
-    this.dragging = false;
-    this.mouseX = 0
-    this.startPos = 0;
-    this.startWidthPrev = 0;
-    this.startWidthNext = 0;
-
-  }
-
-  startDrag() {
-    if (this.props.disabled) {
-      return;
-    }
-
-    this.dragging = true;
-    this.startPos = this.mouseX;
-
-    this.startWidthPrev = 0;
-    this.startWidthNext = 0;
-
-    this.props.refs[this.props.index].forEach(ref => {
-      this.handleRefMovement(ref);
+  const startDrag = (e) => {
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', function() {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', this)
     });
-  }
 
-  handleRefMovement(ref) {
-    let prevSibling = ref.previousSibling;
-    let nextSibling = ref.nextSibling;
-
-    if (prevSibling) {
-      this.startWidthPrev = prevSibling.clientWidth;
-    }
-
-    if (nextSibling) {
-      this.startWidthNext = nextSibling.clientWidth;
-    }
-  }
-
-  endDrag() {
-    if (this.props.disabled) {
-      return;
-    }
-
-    this.dragging = false;
-  }
-
-  onMouseMove(e) {
-    if (this.props.disabled) {
-      return;
-    }
-
-    this.mouseX = e.touches ? e.touches[0].screenX : e.screenX;
-    if (!this.dragging) {
-      return;
-    }
+    const startPos = e.touches ? e.touches[0].screenX : e.screenX;
+    setState(prev => ({
+      ...prev,
+      startPos: startPos,
+      startWidthPrev: 0,
+      startWidthNext: 0,
+    }));
     
-    const moveDiff = this.startPos - this.mouseX;
-    let newPrev = this.startWidthPrev - moveDiff;
-    let newNext = this.startWidthNext + moveDiff;
+    const currentElem = resizer.current;
 
-    if (newPrev < this.props.minWidth || newNext < this.props.minWidth) {
+    if (currentElem) {
+      if (currentElem.previousSibling) {
+        setState(prev => ({
+          ...prev,
+          startWidthPrev: currentElem.previousSibling.clientWidth,
+        }));
+      }
+  
+      if (currentElem.nextSibling) {
+        setState(prev => ({
+          ...prev,
+          startWidthNext: currentElem.nextSibling.clientWidth,
+        }));
+      }
+    }
+  }
+
+  const onMouseMove = (e) => {
+    const mouseX = e.touches ? e.touches[0].screenX : e.screenX;
+    const moveDiff = state.startPos - mouseX;
+    
+    const newPrev = state.startWidthPrev - moveDiff;
+    const currentElem = resizer.current;
+
+    if(newPrev < parseInt(currentElem.previousSibling.style.minWidth)||
+      newPrev > parseInt(currentElem.previousSibling.style.maxWidth)) {
       return;
     }
 
-    this.props.refs[this.props.index].forEach(ref => {
+    refs[index].forEach(ref => {
       ref.previousSibling.style.width = newPrev + 'px';
-      ref.nextSibling.style.width = newNext + 'px';
     });
   }
 
-  componentDidMount() {
-    if (this.props.disabled) {
-      return;
-    }
-
-    // Add ref to list of components that should be updated with this one
-    this.addRef(this.refs.ele);
-    this.addEventListenersToDocument();
-  }
-
-  addRef() {
-    this.props.setRefs(prev => (
-      prev.map((refList, index) => (
-        index===this.props.index ? [...refList, this.refs.ele] : [...refList]
+  useEffect(() => {
+    setRefs(prev => (
+      prev.map((refList, refIndex) => (
+        refIndex===index ? [...refList, resizer.current] : [...refList]
       ))
     ))
-  }
+  }, []);
 
-  componentWillUnmount() {
-    if (this.props.disabled) {
-      return;
-    }
-
-    this.removeEventListenersFromDocument();
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.disabled && !this.props.disabled) {
-      this.addEventListenersToDocument();
-    }
-
-    if (!prevProps.disabled && this.props.disabled) {
-      this.removeEventListenersFromDocument();
-    }
-  }
-
-  addEventListenersToDocument() {
-    document.addEventListener('mousemove', this.onMouseMove);
-    document.addEventListener('mouseup', this.endDrag);
-
-    document.addEventListener("touchmove", this.onMouseMove);
-    document.addEventListener("touchend", this.endDrag);
-  }
-
-  removeEventListenersFromDocument() {
-    document.removeEventListener('mousemove', this.onMouseMove);
-    document.removeEventListener('mouseup', this.endDrag);
-
-    document.removeEventListener('touchmove', this.onMouseMove);
-    document.removeEventListener('touchend', this.endDrag);
-  }
-
-  render() {
-
-    var style = {
-      userSelect: "none"
-    };
-
-    if (!this.props.disabled) {
-      style.cursor = 'ew-resize';
-    }
-
-    if (this.props.className === "") {
-      style.width = '6px';
-      style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-    }
-
-    return (
-      <td ref="ele"
-        style={style}
-        className={this.props.className}
-        onMouseDown={!this.props.disabled && this.startDrag}
-        onTouchStart={!this.props.disabled && this.startDrag} />
-    );
-  }
-
+  return (
+    <td
+      ref={resizer}
+      style={getStyle()}
+      onMouseDown={startDrag}
+      onTouchStart={startDrag} 
+    />
+  )
 }
 
-ColumnResizer.defaultProps = {
-  disabled: false,
-  minWidth: 0,
-  className: "",
-}
-
-ColumnResizer.propTypes = {
-  disabled: bool,
-  minWidth: number,
-  className: string,
-}
+export default ColumnResizer;
