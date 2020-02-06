@@ -1,69 +1,46 @@
-import React, {useState, useEffect, useRef} from 'react';
+//Author: Nik M
+//https://github.com/nik-m2/react-column-resizer
+//Modified by: Saahil H
+//https://github.com/saahilh/react-column-resizer
+
+import React, {useEffect, useRef} from 'react';
 
 const getStyle = () => ({
   userSelect: "none",
   cursor: 'ew-resize',
   width: '6px',
-  width: 'rgba(0, 0, 0, 0.1)',
 });
 
 function ColumnResizer({index, refs, setRefs}) {
   const resizer = useRef();
 
-  const [state, setState] = useState({
-    startPos: 0,
-    startWidthPrev: 0,
-    startWidthNext: 0,
-  });
-
   const startDrag = (e) => {
-    document.addEventListener('mousemove', onMouseMove);
+    const startPos = e.touches ? e.touches[0].screenX : e.screenX;
+    const previousSiblingWidth = parseInt(resizer.current.previousSibling.style.width);
+    const mouseMoveHandler = onMouseMove(previousSiblingWidth, startPos);
+
+    document.addEventListener('mousemove', mouseMoveHandler);
     document.addEventListener('mouseup', function() {
-      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mousemove', mouseMoveHandler);
       document.removeEventListener('mouseup', this)
     });
-
-    const startPos = e.touches ? e.touches[0].screenX : e.screenX;
-    setState(prev => ({
-      ...prev,
-      startPos: startPos,
-      startWidthPrev: 0,
-      startWidthNext: 0,
-    }));
-    
-    const currentElem = resizer.current;
-
-    if (currentElem) {
-      if (currentElem.previousSibling) {
-        setState(prev => ({
-          ...prev,
-          startWidthPrev: currentElem.previousSibling.clientWidth,
-        }));
-      }
-  
-      if (currentElem.nextSibling) {
-        setState(prev => ({
-          ...prev,
-          startWidthNext: currentElem.nextSibling.clientWidth,
-        }));
-      }
-    }
   }
 
-  const onMouseMove = (e) => {
-    const mouseX = e.touches ? e.touches[0].screenX : e.screenX;
-    const moveDiff = state.startPos - mouseX;
-    
-    const newPrev = state.startWidthPrev - moveDiff;
+  const onMouseMove = (originalWidth, startPos) => e => {
+    console.log(originalWidth);
     const currentElem = resizer.current;
+    const mouseX = e.touches ? e.touches[0].screenX : e.screenX;
 
-    if(newPrev < parseInt(currentElem.previousSibling.style.minWidth)||
-      newPrev > parseInt(currentElem.previousSibling.style.maxWidth)) {
+    const delta = startPos - mouseX;
+    const newWidth =  originalWidth - delta;
+
+    if(newWidth < parseInt(currentElem.previousSibling.style.minWidth)||
+      newWidth > parseInt(currentElem.previousSibling.style.maxWidth)) {
       return;
     }
 
     refs[index].forEach(ref => {
-      ref.previousSibling.style.width = newPrev + 'px';
+      ref.previousSibling.style.width = newWidth + 'px';
     });
   }
 
