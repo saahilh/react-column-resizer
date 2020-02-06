@@ -27,7 +27,6 @@ function ColumnResizer({index, refs, setRefs}) {
   }
 
   const onMouseMove = (originalWidth, startPos) => e => {
-    console.log(originalWidth);
     const currentElem = resizer.current;
     const mouseX = e.touches ? e.touches[0].screenX : e.screenX;
 
