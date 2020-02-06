@@ -39,6 +39,10 @@ function ColumnResizer({disabled, index, refs, setRefs}) {
       ))
     ));
 
+    if(refs[index] && refs[index].length) {
+      resizer.current.previousSibling.style.width = refs[index][0].previousSibling.style.width;
+    }
+
     return function cleanup() {
       setRefs(prev => (
         prev.map((refList, refIndex) => (
