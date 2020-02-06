@@ -1,17 +1,6 @@
-//Author: Nik M
-//https://github.com/nik-m2/react-column-resizer
-//Modified by: Saahil H
-//https://github.com/saahilh/react-column-resizer
-
 import React, {useEffect, useRef} from 'react';
 
-const getStyle = () => ({
-  userSelect: "none",
-  cursor: 'ew-resize',
-  width: '6px',
-});
-
-function ColumnResizer({index, refs, setRefs}) {
+function ColumnResizer({disabled, index, refs, setRefs}) {
   const resizer = useRef();
 
   const startDrag = (e) => {
@@ -48,13 +37,34 @@ function ColumnResizer({index, refs, setRefs}) {
       prev.map((refList, refIndex) => (
         refIndex===index ? [...refList, resizer.current] : [...refList]
       ))
-    ))
+    ));
+
+    return function cleanup() {
+      setRefs(prev => (
+        prev.map((refList, refIndex) => (
+          refIndex===index ? refList.splice(refList.indexOf(resizer.current), 1) : [...refList]
+        ))
+      ));
+    }
   }, []);
+
+  const style = {
+    webkitTouchCallout: 'none',
+    webkitUserSelect: 'none',
+    mozUserSelect: 'none',
+    msUserSelect: 'none',
+    userSelect: 'none',
+    width: '6px',
+  }
+
+  if (disabled) {
+    return <td ref={resizer} style={style} />
+  }
 
   return (
     <td
       ref={resizer}
-      style={getStyle()}
+      style={{...style, cursor: 'ew-resize'}}
       onMouseDown={startDrag}
       onTouchStart={startDrag} 
     />
